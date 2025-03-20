@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warewolf</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cafe: {
+                            light: '#E6CCB2',
+                            DEFAULT: '#9B6B43',
+                            dark: '#603813',
+                        },
+                        accent: {
+                            light: '#FFF3E0',
+                            DEFAULT: '#FFE0B2',
+                            dark: '#FFB74D',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500;600&display=swap');
+        
+        .font-playfair { font-family: 'Playfair Display', serif; }
+        .font-poppins { font-family: 'Poppins', sans-serif; }
+        
+        .menu-item {
+            transition: transform 0.2s;
+        }
+        
+        .menu-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .category-btn.active {
+            background-color: #9B6B43;
+            color: white;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .custom-shadow {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-accent-light min-h-screen font-poppins">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-cafe to-cafe-dark rounded-2xl shadow-xl p-8 mb-8 animate-fade-in">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="font-playfair text-5xl font-bold text-white mb-2">KAL COFFE AND EATRY</h1>
+                    <p class="text-accent-light text-lg">Pengalaman Kopi & Kuliner Premium</p>
+                </div>
+                <div class="text-white text-right">
+                    <div id="currentTime" class="text-2xl mb-1"></div>
+                    <div id="currentDate" class="text-sm opacity-75"></div>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Menu Section -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-2xl custom-shadow p-6 mb-8 animate-slide-up">
+                    <h2 class="font-playfair text-3xl font-bold mb-6 text-cafe-dark">Menu Categories</h2>
+                    <div class="flex space-x-4 mb-6 overflow-x-auto scrollbar-hide pb-2">
+                        <button class="category-btn active px-6 py-2 rounded-full bg-cafe text-white font-semibold transition-all duration-300 hover:shadow-md" onclick="filterMenu('all')">
+                            <i class="fas fa-th-large mr-2"></i>All
+                        </button>
+                        <button class="category-btn px-6 py-2 rounded-full bg-gray-200 font-semibold transition-all duration-300 hover:shadow-md" onclick="filterMenu('coffee')">
+                            <i class="fas fa-coffee mr-2"></i>Coffee
+                        </button>
+                        <button class="category-btn px-6 py-2 rounded-full bg-gray-200 font-semibold transition-all duration-300 hover:shadow-md" onclick="filterMenu('non-coffee')">
+                            <i class="fas fa-glass-whiskey mr-2"></i>Non-Coffee
+                        </button>
+                        <button class="category-btn px-6 py-2 rounded-full bg-gray-200 font-semibold transition-all duration-300 hover:shadow-md" onclick="filterMenu('food')">
+                            <i class="fas fa-utensils mr-2"></i>Food
+                        </button>
+                        <button class="category-btn px-6 py-2 rounded-full bg-gray-200 font-semibold transition-all duration-300 hover:shadow-md" onclick="filterMenu('dessert')">
+                            <i class="fas fa-ice-cream mr-2"></i>Dessert
+                        </button>
+                        <button class="category-btn px-6 py-2 rounded-full bg-gray-200 font-semibold transition-all duration-300 hover:shadow-md" onclick="filterMenu('snacks')">
+                            <i class="fas fa-cookie mr-2"></i>Snacks
+                        </button>
+                    </div>
+                    <div id="menuContainer" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+                </div>
+            </div>
+
+            <!-- Cart Section -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-2xl custom-shadow p-6 sticky top-8 animate-slide-up">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="font-playfair text-3xl font-bold text-cafe-dark">Your Order</h2>
+                        <button onclick="clearCart()" class="text-red-500 hover:text-red-700 transition-colors duration-300">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto max-h-[500px] mb-6 scrollbar-hide">
+                        <table class="w-full">
+                            <thead class="bg-accent-light sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-2 text-left">Item</th>
+                                    <th class="px-4 py-2 text-right">Price</th>
+                                    <th class="px-4 py-2 text-center">Qty</th>
+                                    <th class="px-4 py-2 text-right">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cartItems"></tbody>
+                        </table>
+                    </div>
+                    <div class="border-t pt-4">
+                        <div class="space-y-2 mb-4">
+                            <div class="flex justify-between text-gray-600">
+                                <span>Subtotal:</span>
+                                <span>Rp. <span id="subtotalAmount">0</span></span>
+                            </div>
+                            <div class="flex justify-between text-gray-600">
+                                <span>Tax (10%):</span>
+                                <span>Rp. <span id="taxAmount">0</span></span>
+                            </div>
+                            <div class="flex justify-between font-bold text-xl text-cafe-dark">
+                                <span>Total:</span>
+                                <span>Rp. <span id="totalAmount">0</span></span>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <button onclick="processPayment('qris')" class="w-full bg-cafe hover:bg-cafe-dark text-white font-bold py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                                <i class="fas fa-qrcode mr-2"></i> Pay with QRIS
+                            </button>
+                            <button onclick="processPayment('cash')" class="w-full bg-accent hover:bg-accent-dark text-cafe-dark font-bold py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                                <i class="fas fa-money-bill-wave mr-2"></i> Pay with Cash
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 animate-slide-up">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-cafe-dark font-playfair">Complete Payment</h2>
+                <button onclick="closePaymentModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="qrCode" class="flex justify-center mb-6"></div>
+            <div id="cashPayment" class="hidden space-y-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Amount Received:</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2 text-gray-600">Rp.</span>
+                        <input type="number" id="cashAmount" class="pl-12 w-full py-2 px-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cafe">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Change:</label>
+                    <div id="changeAmount" class="text-2xl font-bold text-cafe">Rp. 0</div>
+                </div>
+            </div>
+            <div class="flex space-x-4 mt-6">
+                <button onclick="confirmPayment()" class="flex-1 bg-cafe hover:bg-cafe-dark text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                    <i class="fas fa-check mr-2"></i> Confirm
+                </button>
+                <button onclick="closePaymentModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg transition duration-300">
+                    <i class="fas fa-times mr-2"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center animate-slide-up">
+            <div class="text-green-500 text-6xl mb-4">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Payment Successful!</h2>
+            <p class="text-gray-600 mb-6">Thank you for your order.</p>
+            <button onclick="closeSuccessModal()" class="bg-cafe hover:bg-cafe-dark text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                Continue Shopping
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const menuItems = [
+            // Coffee
+            { name: 'Espresso', price: 18000, image: 'Espresso.jpeg', category: 'coffee', description: 'Pure coffee shot' },
+            { name: 'Cappuccino', price: 25000, image: 'Cappuccino.jpeg', category: 'coffee', description: 'Espresso with steamed milk foam' },
+            { name: 'Latte Macchiato', price: 23000, image: 'Latte Macchiato.jpeg', category: 'coffee', description: 'Espresso with steamed milk' },
+            { name: 'Americano', price: 20000, image: 'Americano.jpeg', category: 'coffee', description: 'Espresso with ice water' },
+            { name: 'Mocha', price: 26000, image: 'Mocha.jpeg', category: 'coffee', description: 'Espresso with chocolate and milk' },
+            { name: 'Caramel Macchiato', price: 28000, image: 'Caramel Macchiato.jpeg', category: 'coffee', description: 'Vanilla and caramel flavored coffee' },
+            { name: 'Cold Brew', price: 22000, image: 'Cold Brew.jpeg', category: 'coffee', description: 'Cold extracted coffee' },
+            { name: 'Affogato', price: 25000, image: 'Affogato.jpeg', category: 'coffee', description: 'Espresso with ice cream' },
+            
+            // Non-Coffee
+            { name: 'Green Tea Latte', price: 22000, image: 'Green Tea Latte.jpeg', category: 'non-coffee', description: 'Japanese matcha with milk' },
+            { name: 'Thai Tea', price: 20000, image: 'Thai Tea.jpeg', category: 'non-coffee', description: 'Classic Ice Thai milk tea' },
+            { name: 'Hot Chocolate', price: 23000, image: 'Hot Chocolate.jpeg', category: 'non-coffee', description: 'Rich chocolate drink' },
+            { name: 'Red Velvet', price: 24000, image: 'Red Valvet.jpeg', category: 'non-coffee', description: 'Homemade Red Velvet Hot Chocolate' },
+            { name: 'Strawberry Smoothie', price: 25000, image: 'Strawberry Smoothie.jpeg', category: 'non-coffee', description: 'Fresh strawberry blend' },
+            { name: 'Mango Juice', price: 20000, image: 'Mango Juice.jpeg', category: 'non-coffee', description: 'Fresh mango juice' },
+            
+            // Food
+            { name: 'Croissant', price: 15000, image: 'Croissant.jpeg', category: 'food', description: 'Croissant Breakfast Sandwich' },
+            { name: 'Club Sandwich', price: 30000, image: 'Club Sandwich.jpeg', category: 'food', description: 'Triple-decker sandwich' },
+            { name: 'Chicken Pasta', price: 35000, image: 'Chicken Pasta.jpeg', category: 'food', description: 'Creamy cajun chicken pasta' },
+            { name: 'Caesar Salad', price: 28000, image: 'Caesar Salad.jpeg', category: 'food', description: 'Classic Caesar salad' },
+            { name: 'Beef Burger', price: 38000, image: 'Beef Burger.jpeg', category: 'food', description: 'Juicy beef burger' },
+            { name: 'Tuna Sandwich', price: 28000, image: 'Tuna Sandwich.jpeg', category: 'food', description: 'Fresh tuna salad sandwich' },
+            
+            // Dessert
+            { name: 'Tiramisu', price: 28000, image: 'Tiramisu.jpeg', category: 'dessert', description: 'Coffee-flavored dessert' },
+            { name: 'Cheesecake', price: 30000, image: 'Cheesecake.jpeg', category: 'dessert', description: 'New York cheesecake' },
+            { name: 'Chocolate Cake', price: 25000, image: 'Chocolate Cake.jpeg', category: 'dessert', description: 'mousse chocolate cake' },
+            { name: 'Ice Cream', price: 20000, image: 'Ice Cream.jpeg', category: 'dessert', description: 'Vegan Cherry Ice Cream' },
+            { name: 'Apple Pie', price: 25000, image: 'Apple Pie.jpeg', category: 'dessert', description: 'Salted caramel apple pie' },
+            
+            // Snacks
+            { name: 'French Fries', price: 15000, image: 'French Fries.jpeg', category: 'snacks', description: 'Crispy potato fries' },
+            { name: 'Nachos', price: 25000, image: 'Nachos.jpeg', category: 'snacks', description: 'With cheese sauce' },
+            { name: 'Chicken Wings', price: 30000, image: 'Chicken Wings.jpeg', category: 'snacks', description: 'Spicy wings' },
+            { name: 'Onion Rings', price: 18000, image: 'Onion Rings.jpeg', category: 'snacks', description: 'Crispy onion rings' }
+        ];
+
+        let cart = [];
+        let currentCategory = 'all';
+        let currentPaymentMethod = '';
+
+        // Update time and date
+        function updateDateTime() {
+            const now = moment();
+            document.getElementById('currentTime').textContent = now.format('HH:mm:ss');
+            document.getElementById('currentDate').textContent = now.format('dddd, D MMMM YYYY');
+        }
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+
+        function filterMenu(category) {
+            currentCategory = category;
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-cafe', 'text-white');
+                btn.classList.add('bg-gray-200');
+            });
+            event.target.closest('.category-btn').classList.add('active', 'bg-cafe', 'text-white');
+            renderMenu();
+        }
+
+        function renderMenu() {
+            const menuContainer = document.getElementById('menuContainer');
+            menuContainer.innerHTML = '';
+            
+            const filteredItems = currentCategory === 'all' 
+                ? menuItems 
+                : menuItems.filter(item => item.category === currentCategory);
+
+            filteredItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'menu-item bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden';
+                div.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}" class="w-full h-48 object-cover">
+                    <div class="p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg">${item.name}</h3>
+                            <span class="bg-accent text-cafe-dark px-3 py-1 rounded-full text-sm font-semibold">
+                                Rp. ${item.price.toLocaleString()}
+                            </span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-4">${item.description}</p>
+                        <button onclick="addToCart('${item.name}', ${item.price})" 
+                                class="w-full bg-cafe hover:bg-cafe-dark text-white font-bold py-2 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                            <i class="fas fa-plus mr-2"></i>
+                            Add to Order
+                        </button>
+                    </div>
+                `;
+                menuContainer.appendChild(div);
+            });
+        }
+
+        function addToCart(name, price) {
+            const existingItem = cart.find(item => item.name === name);
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+                cart.push({ name, price, quantity: 1 });
+            }
+            updateCart();
+            
+            // Show animation feedback
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-fade-in';
+            toast.textContent = `Added ${name} to cart`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        function updateCart() {
+            const cartItems = document.getElementById('cartItems');
+            const subtotalAmount = document.getElementById('subtotalAmount');
+            const taxAmount = document.getElementById('taxAmount');
+            const totalAmount = document.getElementById('totalAmount');
+            
+            let subtotal = 0;
+
+            cartItems.innerHTML = cart.map((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                subtotal += itemTotal;
+                return `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-3">${item.name}</td>
+                        <td class="px-4 py-3 text-right">${item.price.toLocaleString()}</td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex items-center justify-center space-x-2">
+                                <button onclick="updateQuantity(${index}, -1)" 
+                                        class="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors duration-300">
+                                    <i class="fas fa-minus text-xs"></i>
+                                </button>
+                                <span class="w-8 text-center">${item.quantity}</span>
+                                <button onclick="updateQuantity(${index}, 1)"
+                                        class="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors duration-300">
+                                    <i class="fas fa-plus text-xs"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-right">${itemTotal.toLocaleString()}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const tax = subtotal * 0.1;
+            const total = subtotal + tax;
+
+            subtotalAmount.textContent = subtotal.toLocaleString();
+            taxAmount.textContent = tax.toLocaleString();
+            totalAmount.textContent = total.toLocaleString();
+        }
+
+        function updateQuantity(index, change) {
+            cart[index].quantity += change;
+            if (cart[index].quantity <= 0) {
+                cart.splice(index, 1);
+            }
+            updateCart();
+        }
+
+        function clearCart() {
+            if (cart.length === 0) return;
+            
+            if (confirm('Are you sure you want to clear your cart?')) {
+                cart = [];
+                updateCart();
+            }
+        }
+
+        function processPayment(method) {
+            if (cart.length === 0) {
+                alert('Please add items to your cart first.');
+                return;
+            }
+            
+            currentPaymentMethod = method;
+            const paymentModal = document.getElementById('paymentModal');
+            const qrCode = document.getElementById('qrCode');
+            const cashPayment = document.getElementById('cashPayment');
+            
+            paymentModal.classList.remove('hidden');
+            paymentModal.classList.add('flex');
+            
+            if (method === 'qris') {
+                qrCode.classList.remove('hidden');
+                cashPayment.classList.add('hidden');
+                
+                const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                qrCode.innerHTML = '';
+                new QRCode(qrCode, {
+                    text: JSON.stringify({
+                        merchantName: 'Valeria Cafe',
+                        amount: total,
+                        orderId: Date.now().toString()
+                    }),
+                    width: 256,
+                    height: 256
+                });
+            } else {
+                qrCode.classList.add('hidden');
+                cashPayment.classList.remove('hidden');
+                
+                const cashAmountInput = document.getElementById('cashAmount');
+                cashAmountInput.value = '';
+                cashAmountInput.addEventListener('input', calculateChange);
+            }
+        }
+
+        function calculateChange() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const total = subtotal + (subtotal * 0.1); // Including 10% tax
+            const cashReceived = parseFloat(document.getElementById('cashAmount').value) || 0;
+            const change = cashReceived - total;
+            
+            document.getElementById('changeAmount').textContent = 
+                change >= 0 ? `Rp. ${change.toLocaleString()}` : 'Insufficient amount';
+        }
+
+        async function confirmPayment() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const total = subtotal + (subtotal * 0.1); // Including 10% tax
+            
+            if (currentPaymentMethod === 'cash') {
+                const cashReceived = parseFloat(document.getElementById('cashAmount').value) || 0;
+                if (cashReceived < total) {
+                    alert('Insufficient payment amount');
+                    return;
+                }
+            }
+
+            try {
+                const orderId = Date.now().toString();
+                const transaction = {
+                    orderId,
+                    paymentMethod: currentPaymentMethod,
+                    items: cart,
+                    subtotal: subtotal,
+                    tax: subtotal * 0.1,
+                    total: total,
+                    cashReceived: currentPaymentMethod === 'cash' ? 
+                        parseFloat(document.getElementById('cashAmount').value) : null,
+                    timestamp: new Date().toISOString()
+                };
+
+                // In a real application, you would send this to your backend
+                console.log('Transaction completed:', transaction);
+
+                // Show success message
+                closePaymentModal();
+                showSuccessModal();
+                
+                // Clear cart
+                cart = [];
+                updateCart();
+                
+                // In a real application, you would generate and open a receipt
+                console.log('Receipt generated for order:', orderId);
+            } catch (error) {
+                alert('Error processing payment. Please try again.');
+                console.error('Payment error:', error);
+            }
+        }
+
+        function closePaymentModal() {
+            const paymentModal = document.getElementById('paymentModal');
+            paymentModal.classList.add('hidden');
+            paymentModal.classList.remove('flex');
+            currentPaymentMethod = '';
+        }
+
+        function showSuccessModal() {
+            const successModal = document.getElementById('successModal');
+            successModal.classList.remove('hidden');
+            successModal.classList.add('flex');
+        }
+
+        function closeSuccessModal() {
+            const successModal = document.getElementById('successModal');
+            successModal.classList.add('hidden');
+            successModal.classList.remove('flex');
+        }
+
+        // Initialize
+        renderMenu();
+    </script>
+</body>
+</html>
+
